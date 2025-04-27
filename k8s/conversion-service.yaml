@@ -1,0 +1,36 @@
+# File: k8s/conversion-service.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: conversion-service
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: conversion-service
+  template:
+    metadata:
+      labels:
+        app: conversion-service
+    spec:
+      containers:
+      - name: conversion-service
+        image: ${ACR_REGISTRY}/conversion-service:latest
+        ports:
+        - containerPort: 80
+        env:
+        - name: ASPNETCORE_ENVIRONMENT
+          value: "Production"
+        # TODO: Add other environment variables
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: conversion-service
+spec:
+  selector:
+    app: conversion-service
+  ports:
+  - port: 80
+    targetPort: 80
+  type: ClusterIP

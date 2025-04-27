@@ -1,0 +1,36 @@
+# File: k8s/fhir-receiver.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: fhir-receiver
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: fhir-receiver
+  template:
+    metadata:
+      labels:
+        app: fhir-receiver
+    spec:
+      containers:
+      - name: fhir-receiver
+        image: ${ACR_REGISTRY}/fhir-receiver:latest
+        ports:
+        - containerPort: 80
+        env:
+        - name: ASPNETCORE_ENVIRONMENT
+          value: "Production"
+        # TODO: Add other environment variables
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: fhir-receiver
+spec:
+  selector:
+    app: fhir-receiver
+  ports:
+  - port: 80
+    targetPort: 80
+  type: ClusterIP

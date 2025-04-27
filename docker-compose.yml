@@ -1,0 +1,102 @@
+# File: docker-compose.yml
+version: '3.8'
+
+services:
+  # FHIR Receiver Service
+  fhir-receiver:
+    build:
+      context: ./backend/FhirReceiverService
+    ports:
+      - "5001:80"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ConnectionStrings__DefaultConnection=Server=sqlserver;Database=FhirConverter;User Id=sa;Password=YourStrongPassword123!;TrustServerCertificate=True;
+    depends_on:
+      - sqlserver
+
+  # Conversion Service
+  conversion-service:
+    build:
+      context: ./backend/ConversionService
+    ports:
+      - "5002:80"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ConnectionStrings__DefaultConnection=Server=sqlserver;Database=FhirConverter;User Id=sa;Password=YourStrongPassword123!;TrustServerCertificate=True;
+    depends_on:
+      - sqlserver
+
+  # Transmission Service
+  transmission-service:
+    build:
+      context: ./backend/TransmissionService
+    ports:
+      - "5003:80"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ConnectionStrings__DefaultConnection=Server=sqlserver;Database=FhirConverter;User Id=sa;Password=YourStrongPassword123!;TrustServerCertificate=True;
+    depends_on:
+      - sqlserver
+
+  # Logging Service
+  logging-service:
+    build:
+      context: ./backend/LoggingService
+    ports:
+      - "5004:80"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ConnectionStrings__DefaultConnection=Server=sqlserver;Database=FhirConverter;User Id=sa;Password=YourStrongPassword123!;TrustServerCertificate=True;
+    depends_on:
+      - sqlserver
+
+  # Notification Service
+  notification-service:
+    build:
+      context: ./backend/NotificationService
+    ports:
+      - "5005:80"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ConnectionStrings__DefaultConnection=Server=sqlserver;Database=FhirConverter;User Id=sa;Password=YourStrongPassword123!;TrustServerCertificate=True;
+    depends_on:
+      - sqlserver
+
+  # Resend API Service
+  resend-api:
+    build:
+      context: ./backend/ResendApiService
+    ports:
+      - "5006:80"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ConnectionStrings__DefaultConnection=Server=sqlserver;Database=FhirConverter;User Id=sa;Password=YourStrongPassword123!;TrustServerCertificate=True;
+    depends_on:
+      - sqlserver
+
+  # Frontend
+  frontend:
+    build:
+      context: ./frontend
+    ports:
+      - "3000:80"
+    depends_on:
+      - resend-api
+      
+  # SQL Server (for development)
+  sqlserver:
+    image: mcr.microsoft.com/mssql/server:2019-latest
+    environment:
+      - SA_PASSWORD=YourStrongPassword123!
+      - ACCEPT_EULA=Y
+    ports:
+      - "1433:1433"
+    volumes:
+      - sqlserver-data:/var/opt/mssql
+
+  # Note: Removing the Azure Service Bus Emulator for now
+  # For local development, you might want to use a message broker like RabbitMQ instead
+  # or implement direct service-to-service communication until integrating with Azure Service Bus
+  
+volumes:
+  sqlserver-data:
