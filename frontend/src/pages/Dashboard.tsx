@@ -1,114 +1,99 @@
-// File: frontend/src/pages/Dashboard.tsx
-import React, { useState, useEffect } from 'react';
+// File: frontend/src/pages/Dashboard.jsx
+import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { makeStyles } from '@material-ui/core/styles';
-import { Grid, Paper } from '@material-ui/core';
-import FilterPanel from '../components/FilterPanel';
+import { Grid, Paper, Typography } from '@material-ui/core';
 import MessageList from '../components/MessageList';
-import ClinicSidebar from '../components/ClinicSidebar';
 import BatchResendDialog from '../components/BatchResendDialog';
-import { useMessages } from '../context/MessageContext';
-
-// Define interfaces
-interface FilterValues {
-  patientId: string;
-  status: string;
-  fromDate?: string;
-  toDate?: string;
-}
+import ClinicSidebar from '../components/ClinicSidebar';
 
 const useStyles = makeStyles((theme) => ({
   root: {
     flexGrow: 1,
+    padding: theme.spacing(3),
+  },
+  title: {
+    marginBottom: theme.spacing(3),
   },
   paper: {
     padding: theme.spacing(2),
-    color: theme.palette.text.secondary,
+    height: '100%',
+  },
+  messageListContainer: {
+    minHeight: 'calc(100vh - 180px)',
+  },
+  clinicSidebarContainer: {
+    height: '100%',
   },
 }));
 
-export default function Dashboard() {
+const Dashboard = () => {
   const classes = useStyles();
-  const { messages, loading, error, fetchMessages, batchResend } = useMessages();
+  const navigate = useNavigate();
   
-  const [filters, setFilters] = useState<FilterValues>({
-    patientId: '',
-    status: ''
-  });
+  const [selectedClinicId, setSelectedClinicId] = useState(null);
+  const [batchResendOpen, setBatchResendOpen] = useState(false);
+  const [selectedMessageIds, setSelectedMessageIds] = useState([]);
   
-  const [selectedMessages, setSelectedMessages] = useState<string[]>([]);
-  const [batchDialogOpen, setBatchDialogOpen] = useState<boolean>(false);
-  
-  // Fetch messages on mount and when filters change
-  useEffect(() => {
-    fetchMessages(filters);
-  }, [fetchMessages]);
-  
-  const handleFilterChange = (newFilters: FilterValues) => {
-    setFilters(newFilters);
-    fetchMessages(newFilters);
+  const handleClinicSelect = (clinicId) => {
+    setSelectedClinicId(clinicId);
+    // In a real implementation, this would filter messages by clinic
   };
   
-  const handleSelectionChange = (selected: string[]) => {
-    setSelectedMessages(selected);
+  const handleOpenBatchResend = (messageIds) => {
+    setSelectedMessageIds(messageIds);
+    setBatchResendOpen(true);
   };
   
-  const handleBatchResendOpen = () => {
-    setBatchDialogOpen(true);
+  const handleCloseBatchResend = () => {
+    setBatchResendOpen(false);
   };
   
-  const handleBatchResendClose = () => {
-    setBatchDialogOpen(false);
+  const handleBatchResendComplete = () => {
+    // In a real implementation, this would refresh the message list
+    setTimeout(() => {
+      setBatchResendOpen(false);
+      // Refresh messages or show a success notification
+    }, 1000);
   };
   
-  const handleBatchResend = async () => {
-    const success = await batchResend(selectedMessages);
-    if (success) {
-      setSelectedMessages([]);
-      fetchMessages(filters);
-    }
-    setBatchDialogOpen(false);
+  const handleViewMessageDetails = (messageId) => {
+    navigate(`/messages/${messageId}`);
   };
   
-  const handleEditBeforeResend = () => {
-    // Navigate to edit page or open edit dialog
-    // For now, just close the dialog
-    setBatchDialogOpen(false);
-  };
-  
-  const selectedMessageObjects = messages.filter(message => 
-    selectedMessages.includes(message.id)
-  );
-
   return (
     <div className={classes.root}>
+      <Typography variant="h4" className={classes.title}>
+        FHIR to HL7 Message Dashboard
+      </Typography>
+      
       <Grid container spacing={3}>
-        <Grid item xs={12} md={3}>
-          <Paper className={classes.paper}>
-            <ClinicSidebar />
-          </Paper>
+        <Grid item xs={12} md={3} className={classes.clinicSidebarContainer}>
+          <ClinicSidebar 
+            onClinicSelect={handleClinicSelect}
+            selectedClinicId={selectedClinicId}
+          />
         </Grid>
-        <Grid item xs={12} md={9}>
+        
+        <Grid item xs={12} md={9} className={classes.messageListContainer}>
           <Paper className={classes.paper}>
-            <FilterPanel 
-              filters={filters} 
-              onFilterChange={handleFilterChange} 
-            />
             <MessageList 
-              selectedMessages={selectedMessages}
-              onSelectionChange={handleSelectionChange}
-              onBatchResend={handleBatchResendOpen}
+              onOpenBatchResend={handleOpenBatchResend}
+              onViewDetails={handleViewMessageDetails}
+              selectedClinicId={selectedClinicId}
             />
           </Paper>
         </Grid>
       </Grid>
       
       <BatchResendDialog
-        open={batchDialogOpen}
-        onClose={handleBatchResendClose}
-        messages={selectedMessageObjects}
-        onResend={handleBatchResend}
-        onEditBeforeResend={handleEditBeforeResend}
+        open={batchResendOpen}
+        onClose={handleCloseBatchResend}
+        messageIds={selectedMessageIds}
+        onComplete={handleBatchResendComplete}
       />
     </div>
   );
-}
+};
+
+export default Dashboard;

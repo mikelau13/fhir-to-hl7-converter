@@ -1,7 +1,11 @@
 // File: backend/ResendApiService/Program.cs
 using Microsoft.AspNetCore.Builder;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Common.Services;
+using ResendApiService.Models;
+using ResendApiService.Configuration;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -11,9 +15,17 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddCors();
 
-// TODO: Add service-specific dependencies
-// builder.Services.AddScoped<IMessageService, MessageService>();
-// builder.Services.AddScoped<IClinicService, ClinicService>();
+// Configure options
+builder.Services.Configure<ResendApiOptions>(
+    builder.Configuration.GetSection("ResendApiOptions"));
+builder.Services.Configure<ServiceBusConnectionOptions>(
+    builder.Configuration.GetSection("ServiceBus"));
+
+// Add HTTP client services
+builder.Services.AddHttpClientServices(builder.Configuration);
+
+// Add service bus client
+builder.Services.AddSingleton<IServiceBusClient, ServiceBusClient>();
 
 var app = builder.Build();
 

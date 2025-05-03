@@ -1,7 +1,13 @@
+
 // File: backend/ConversionService/Program.cs
 using Microsoft.AspNetCore.Builder;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Azure.Messaging.ServiceBus;
+using Common.Services;
+using ConversionService.Converters;
+using ConversionService.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -10,9 +16,24 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
-// TODO: Add service-specific dependencies
-// builder.Services.AddScoped<IFhirToHl7Converter, FhirToHl7Converter>();
-// builder.Services.AddSingleton<IServiceBusClient, ServiceBusClient>();
+// Configure options
+builder.Services.Configure<ServiceBusConnectionOptions>(
+    builder.Configuration.GetSection("ServiceBus"));
+
+// Add Service Bus client
+builder.Services.AddSingleton(provider => 
+{
+    var connectionString = builder.Configuration.GetSection("ServiceBus:ConnectionString").Value;
+    return new Azure.Messaging.ServiceBus.ServiceBusClient(connectionString);
+});
+builder.Services.AddSingleton<IServiceBusClient, Common.Services.ServiceBusClient>();
+
+// Add application services
+builder.Services.AddSingleton<IHl7MessageBuilder, Hl7MessageBuilder>();
+builder.Services.AddScoped<AdtConverter>();
+
+// Add hosted services
+builder.Services.AddHostedService<FhirConsumerHost>();
 
 var app = builder.Build();
 
